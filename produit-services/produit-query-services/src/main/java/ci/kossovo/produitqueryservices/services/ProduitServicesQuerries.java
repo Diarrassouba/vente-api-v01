@@ -27,7 +27,7 @@ public class ProduitServicesQuerries {
   public List<ProduitDto> getAllProduits(ProduitAllQuery event) {
     List<ProduitEntity> produits = produitRepository.findAll();
 
-    return produitMapper.ProduitsToDtos(produits);
+    return produitMapper.produitsToDtos(produits);
   }
 
   @QueryHandler
