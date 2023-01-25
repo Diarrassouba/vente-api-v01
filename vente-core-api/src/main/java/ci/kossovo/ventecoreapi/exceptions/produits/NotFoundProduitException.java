@@ -1,4 +1,4 @@
-package ci.kossovo.produitqueryservices.exceptions;
+package ci.kossovo.ventecoreapi.exceptions.produits;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -10,7 +10,9 @@ public class NotFoundProduitException extends RuntimeException {
     super();
   }
 
-  public NotFoundProduitException(String message) {
-    super(message);
+  public NotFoundProduitException(String idProduit) {
+    super(
+      "Ce produit  dont l'identifiant est: [" + idProduit + "] n'existe pas"
+    );
   }
 }

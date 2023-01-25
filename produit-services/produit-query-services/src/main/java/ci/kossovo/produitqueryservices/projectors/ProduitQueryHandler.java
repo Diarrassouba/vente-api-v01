@@ -1,27 +1,23 @@
-package ci.kossovo.produitqueryservices.services;
-
-import java.util.List;
-
-import org.axonframework.queryhandling.QueryHandler;
-import org.springframework.stereotype.Service;
+package ci.kossovo.produitqueryservices.projectors;
 
 import ci.kossovo.produitqueryservices.data.entities.ProduitEntity;
 import ci.kossovo.produitqueryservices.data.repository.ProduitRepository;
-import ci.kossovo.produitqueryservices.exceptions.NotFoundProduitException;
 import ci.kossovo.produitqueryservices.mapperr.ProduitMapper;
 import ci.kossovo.produitqueryservices.querries.ProduitAllQuery;
 import ci.kossovo.ventecoreapi.dtos.produits.ProduitDto;
+import ci.kossovo.ventecoreapi.exceptions.produits.NotFoundProduitException;
 import ci.kossovo.ventecoreapi.queries.produits.GetProduitDetailsQuery;
+import java.util.List;
 import lombok.AllArgsConstructor;
+import org.axonframework.queryhandling.QueryHandler;
+import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
-public class ProduitServicesQuerries {
+public class ProduitQueryHandler {
 
   private ProduitRepository produitRepository;
   private ProduitMapper produitMapper;
-
- 
 
   @QueryHandler
   public List<ProduitDto> getAllProduits(ProduitAllQuery event) {
@@ -34,11 +30,10 @@ public class ProduitServicesQuerries {
   public ProduitDto getProduitById(GetProduitDetailsQuery query) {
     ProduitEntity produit = produitRepository
       .findByCodeProduit(query.getCodeProduit())
-      .orElseThrow(
-        () ->
-          new NotFoundProduitException(
-            "Le produit ID : " + query.getCodeProduit() + "n'existe pas."
-          )
+      .orElseThrow(() ->
+        new NotFoundProduitException(
+          "Le produit ID : " + query.getCodeProduit() + "n'existe pas."
+        )
       );
 
     return produitMapper.produitToDto(produit);
