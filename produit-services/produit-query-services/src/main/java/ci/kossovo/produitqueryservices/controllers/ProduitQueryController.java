@@ -1,7 +1,10 @@
 package ci.kossovo.produitqueryservices.controllers;
 
+import ci.kossovo.produitqueryservices.models.ProduitQueryResponse;
+import ci.kossovo.produitqueryservices.querries.ProduitAllQuery;
+import ci.kossovo.ventecoreapi.dtos.produits.ProduitDto;
+import ci.kossovo.ventecoreapi.queries.produits.GetProduitDetailsQuery;
 import java.util.List;
-
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,10 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import ci.kossovo.produitqueryservices.querries.ProduitAllQuery;
-import ci.kossovo.ventecoreapi.dtos.produits.ProduitDto;
-import ci.kossovo.ventecoreapi.queries.produits.GetProduitDetailsQuery;
 
 @RestController
 @RequestMapping("/produits")
@@ -22,11 +21,11 @@ public class ProduitQueryController {
   private QueryGateway queryGateway;
 
   @GetMapping
-  public List<ProduitDto> findAll() {
+  public ProduitQueryResponse findAll() {
     ProduitAllQuery query = new ProduitAllQuery();
 
     return queryGateway
-      .query(query, ResponseTypes.multipleInstancesOf(ProduitDto.class))
+      .query(query, ResponseTypes.instanceOf(ProduitQueryResponse.class))
       .join();
   }
 

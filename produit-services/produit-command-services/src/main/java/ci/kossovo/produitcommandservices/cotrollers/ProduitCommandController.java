@@ -1,8 +1,15 @@
 package ci.kossovo.produitcommandservices.cotrollers;
 
+import ci.kossovo.produitcommandservices.dtos.ProduitRequestDto;
+import ci.kossovo.produitcommandservices.dtos.ProduitStockRequestDtos;
+import ci.kossovo.produitcommandservices.dtos.ProduitUpdateRequest;
+import ci.kossovo.ventecoreapi.commands.produit.AddStockProduitCommand;
+import ci.kossovo.ventecoreapi.commands.produit.CreateProduitCommand;
+import ci.kossovo.ventecoreapi.commands.produit.UpdateProduitCommand;
+import ci.kossovo.ventecoreapi.dtos.produits.ProduitDto;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
+import lombok.AllArgsConstructor;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,15 +18,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import ci.kossovo.produitcommandservices.dtos.ProduitRequestDto;
-import ci.kossovo.produitcommandservices.dtos.ProduitStockRequestDtos;
-import ci.kossovo.produitcommandservices.dtos.ProduitUpdateRequest;
-import ci.kossovo.ventecoreapi.commands.produit.AddStockProduitCommand;
-import ci.kossovo.ventecoreapi.commands.produit.CreateProduitCommand;
-import ci.kossovo.ventecoreapi.commands.produit.UpdateProduitCommand;
-import ci.kossovo.ventecoreapi.dtos.produits.ProduitDto;
-import lombok.AllArgsConstructor;
 
 @RestController
 @RequestMapping("/product/command")
@@ -61,7 +59,7 @@ public class ProduitCommandController {
   }
 
   @PatchMapping("/stock")
-  public CompletableFuture<ProduitDto> addStockProduit(
+  public CompletableFuture<String> addStockProduit(
     @RequestBody ProduitStockRequestDtos request
   ) {
     AddStockProduitCommand command = AddStockProduitCommand

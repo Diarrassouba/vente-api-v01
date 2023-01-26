@@ -3,6 +3,7 @@ package ci.kossovo.produitqueryservices.projectors;
 import ci.kossovo.produitqueryservices.data.entities.ProduitEntity;
 import ci.kossovo.produitqueryservices.data.repository.ProduitRepository;
 import ci.kossovo.produitqueryservices.mapperr.ProduitMapper;
+import ci.kossovo.produitqueryservices.models.ProduitQueryResponse;
 import ci.kossovo.produitqueryservices.querries.ProduitAllQuery;
 import ci.kossovo.ventecoreapi.dtos.produits.ProduitDto;
 import ci.kossovo.ventecoreapi.exceptions.produits.NotFoundProduitException;
@@ -20,10 +21,10 @@ public class ProduitQueryHandler {
   private ProduitMapper produitMapper;
 
   @QueryHandler
-  public List<ProduitDto> getAllProduits(ProduitAllQuery event) {
+  public ProduitQueryResponse getAllProduits(ProduitAllQuery query) {
     List<ProduitEntity> produits = produitRepository.findAll();
 
-    return produitMapper.produitsToDtos(produits);
+    return new ProduitQueryResponse(produitMapper.produitsToDtos(produits));
   }
 
   @QueryHandler
