@@ -7,6 +7,7 @@
 		<module>vente-core-api</module>
 		<module>customeer-services</module>
 		<module>card-services</module>
+		<module>produit-services</module>
 	</modules>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
