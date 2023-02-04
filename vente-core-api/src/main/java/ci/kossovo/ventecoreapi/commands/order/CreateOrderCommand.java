@@ -2,7 +2,6 @@ package ci.kossovo.ventecoreapi.commands.order;
 
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
-import ci.kossovo.ventecoreapi.dtos.produits.OrderProduitDtos;
 import ci.kossovo.ventecoreapi.enums.OrderStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +14,7 @@ public class CreateOrderCommand {
   private String orderId;
 
   private String codeProduit;
-  private OrderProduitDtos produit;
+  // private OrderProduitDtos produit;
   private final Long userId;
   // private final Double prix;
   private final Integer quantite;

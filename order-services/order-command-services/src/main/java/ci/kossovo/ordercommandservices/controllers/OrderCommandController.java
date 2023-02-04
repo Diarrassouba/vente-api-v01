@@ -3,6 +3,7 @@ package ci.kossovo.ordercommandservices.controllers;
 import ci.kossovo.ventecoreapi.commands.order.AddProduitOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.ConfirmOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.CreateOrderCommand;
+import ci.kossovo.ventecoreapi.commands.order.CreateOrderSimpleCommand;
 import ci.kossovo.ventecoreapi.commands.order.DecrementProduitCountCommand;
 import ci.kossovo.ventecoreapi.commands.order.IncrementProduitCountCommand;
 import ci.kossovo.ventecoreapi.dtos.order.CreateOrderProdRequest;
@@ -35,42 +36,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderCommandController {
 
   private CommandGateway commandGateway;
-  private QueryGateway queryGateway;
+
+  // private QueryGateway queryGateway;
 
   @PostMapping
   public CompletableFuture<String> createOrder(
     @RequestBody OrderRequest orderDtosRequest
   ) {
-    GetOrderProduitDetailQuery getOrderProduitDetailQuery = new GetOrderProduitDetailQuery(
-      orderDtosRequest.getProduitId()
-    );
-    OrderProduitDtos produit = null;
-    try {
-      produit =
-        queryGateway
-          .query(
-            getOrderProduitDetailQuery,
-            ResponseTypes.instanceOf(OrderProduitDtos.class)
-          )
-          .join();
+    String orderId = UUID.randomUUID().toString();
 
-      String orderId = UUID.randomUUID().toString();
+    CreateOrderCommand command = CreateOrderCommand
+      .builder()
+      .orderId(orderId)
+      .codeProduit(orderDtosRequest.getProduitId())
+      .quantite(orderDtosRequest.getQuantite())
+      .userId(orderDtosRequest.getUserId())
+      .orderStatus(OrderStatus.CREATED)
+      .build();
+    //BeanUtils.copyProperties(orderDtos, command);
 
-      CreateOrderCommand command = CreateOrderCommand
-        .builder()
-        .orderId(orderId)
-        .codeProduit(orderDtosRequest.getProduitId())
-        .produit(produit)
-        .quantite(orderDtosRequest.getQuantite())
-        .userId(orderDtosRequest.getUserId())
-        .orderStatus(OrderStatus.CREATED)
-        .build();
-      //BeanUtils.copyProperties(orderDtos, command);
-
-      return commandGateway.send(command);
-    } catch (Exception e) {
-      throw new NotFindOrderConfirmedException(orderDtosRequest.getProduitId());
-    }
+    return commandGateway.send(command);
   }
 
   @PostMapping("/simpleorder/{userId}")
@@ -79,11 +64,9 @@ public class OrderCommandController {
   ) {
     String orderId = UUID.randomUUID().toString();
 
-    CreateOrderCommand command = CreateOrderCommand
+    CreateOrderSimpleCommand command = CreateOrderSimpleCommand
       .builder()
       .orderId(orderId)
-      .produit(null)
-      .quantite(null)
       .userId(userId)
       .orderStatus(OrderStatus.CREATED)
       .build();
@@ -96,107 +79,43 @@ public class OrderCommandController {
   public CompletableFuture<String> orderethroughproduit(
     @RequestBody CreateOrderProdRequest createOrderProdRequest
   ) {
-    GetOrderProduitDetailQuery getOrderProduitDetailQuery = new GetOrderProduitDetailQuery(
-      createOrderProdRequest.getProduitId()
-    );
-    OrderProduitDtos produit = null;
-    try {
-      produit =
-        queryGateway
-          .query(
-            getOrderProduitDetailQuery,
-            ResponseTypes.instanceOf(OrderProduitDtos.class)
-          )
-          .join();
+    String orderId = UUID.randomUUID().toString();
 
-      String orderId = UUID.randomUUID().toString();
+    CreateOrderCommand command = CreateOrderCommand
+      .builder()
+      .orderId(orderId)
+      .codeProduit(createOrderProdRequest.getProduitId())
+      .quantite(1)
+      .userId(createOrderProdRequest.getUserId())
+      .orderStatus(OrderStatus.CREATED)
+      .build();
 
-      CreateOrderCommand command = CreateOrderCommand
-        .builder()
-        .orderId(orderId)
-        .codeProduit(createOrderProdRequest.getProduitId())
-        .produit(produit)
-        .quantite(1)
-        .userId(createOrderProdRequest.getUserId())
-        .orderStatus(OrderStatus.CREATED)
-        .build();
-
-      return commandGateway.send(command);
-    } catch (Exception e) {
-      throw new NotFindOrderConfirmedException(
-        createOrderProdRequest.getProduitId()
-      );
-    }
+    return commandGateway.send(command);
   }
 
   @PostMapping("/confirm")
   public CompletableFuture<Void> confirm(
     @RequestBody RequestConfirmDtos request
   ) {
-    GetOrderDetailsQuery getOrderDetailsQuery = new GetOrderDetailsQuery(
-      request.getOrderId()
-    );
-    OrderDtos orderDtos = null;
-    try {
-      orderDtos =
-        queryGateway
-          .query(
-            getOrderDetailsQuery,
-            ResponseTypes.instanceOf(OrderDtos.class)
-          )
-          .join();
-
-      ConfirmOrderCommand confirmOrderCommand = ConfirmOrderCommand
-        .builder()
-        .orderId(request.getOrderId())
-        .userId(orderDtos.getUserId())
-        .build();
-      return commandGateway.send(confirmOrderCommand);
-    } catch (Exception e) {
-      throw new NotFindOrderConfirmedException(request.getOrderId());
-    }
+    ConfirmOrderCommand confirmOrderCommand = ConfirmOrderCommand
+      .builder()
+      .orderId(request.getOrderId())
+      .userId(request.getUserId())
+      .build();
+    return commandGateway.send(confirmOrderCommand);
   }
 
   @PostMapping("/produit")
   public CompletableFuture<Void> createOrderProduit(
     @RequestBody OrderProduitAddRequest orderProduitAddRequest
   ) {
-    GetOrderDetailsQuery getOrderDetailsQuery = new GetOrderDetailsQuery(
-      orderProduitAddRequest.getOrderId()
-    );
-    GetOrderProduitDetailQuery getOrderProduitDetailQuery = new GetOrderProduitDetailQuery(
-      orderProduitAddRequest.getCodeProduit()
-    );
-    OrderDtos orderDtos = null;
-    OrderProduitDtos produitDto = null;
-    try {
-      orderDtos =
-        queryGateway
-          .query(
-            getOrderDetailsQuery,
-            ResponseTypes.instanceOf(OrderDtos.class)
-          )
-          .join();
-
-      produitDto =
-        queryGateway
-          .query(
-            getOrderProduitDetailQuery,
-            ResponseTypes.instanceOf(OrderProduitDtos.class)
-          )
-          .join();
-      AddProduitOrderCommand command = AddProduitOrderCommand
-        .builder()
-        .orderId(orderProduitAddRequest.getOrderId())
-        .codeProduit(orderProduitAddRequest.getCodeProduit())
-        .orderDtos(orderDtos)
-        .orderProduitDtos(produitDto)
-        .quantite(orderProduitAddRequest.getQuantite())
-        .build();
-      return commandGateway.send(command);
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage());
-    }
+    AddProduitOrderCommand command = AddProduitOrderCommand
+      .builder()
+      .orderId(orderProduitAddRequest.getOrderId())
+      .codeProduit(orderProduitAddRequest.getCodeProduit())
+      .quantite(orderProduitAddRequest.getQuantite())
+      .build();
+    return commandGateway.send(command);
   }
 
   @PostMapping("/produit/increment/{orderId}/{produitId}")
@@ -219,12 +138,12 @@ public class OrderCommandController {
     @PathVariable("orderId") String orderId,
     @PathVariable("produitId") String produitId
   ) {
-    return commandGateway.send(
-      DecrementProduitCountCommand
-        .builder()
-        .orderId(orderId)
-        .codeProduit(produitId)
-        .build()
-    );
+    DecrementProduitCountCommand command = DecrementProduitCountCommand
+      .builder()
+      .orderId(orderId)
+      .codeProduit(produitId)
+      .build();
+
+    return commandGateway.send(command);
   }
 }
