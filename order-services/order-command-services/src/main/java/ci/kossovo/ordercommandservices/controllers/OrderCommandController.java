@@ -7,22 +7,15 @@ import ci.kossovo.ventecoreapi.commands.order.CreateOrderSimpleCommand;
 import ci.kossovo.ventecoreapi.commands.order.DecrementProduitCountCommand;
 import ci.kossovo.ventecoreapi.commands.order.IncrementProduitCountCommand;
 import ci.kossovo.ventecoreapi.dtos.order.CreateOrderProdRequest;
-import ci.kossovo.ventecoreapi.dtos.order.OrderDtos;
 import ci.kossovo.ventecoreapi.dtos.order.OrderProduitAddRequest;
 import ci.kossovo.ventecoreapi.dtos.order.OrderRequest;
 import ci.kossovo.ventecoreapi.dtos.order.RequestConfirmDtos;
-import ci.kossovo.ventecoreapi.dtos.produits.OrderProduitDtos;
 import ci.kossovo.ventecoreapi.enums.OrderStatus;
-import ci.kossovo.ventecoreapi.exceptions.order.NotFindOrderConfirmedException;
-import ci.kossovo.ventecoreapi.queries.orders.GetOrderDetailsQuery;
-import ci.kossovo.ventecoreapi.queries.orders.GetOrderProduitDetailQuery;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,9 +33,7 @@ public class OrderCommandController {
   // private QueryGateway queryGateway;
 
   @PostMapping
-  public CompletableFuture<String> createOrder(
-    @RequestBody OrderRequest orderDtosRequest
-  ) {
+  public CompletableFuture<String> createOrder( @RequestBody OrderRequest orderDtosRequest) {
     String orderId = UUID.randomUUID().toString();
 
     CreateOrderCommand command = CreateOrderCommand
@@ -50,12 +41,13 @@ public class OrderCommandController {
       .orderId(orderId)
       .codeProduit(orderDtosRequest.getProduitId())
       .quantite(orderDtosRequest.getQuantite())
-      .userId(orderDtosRequest.getUserId())
+      .customerId(orderDtosRequest.getCustomerId())
       .orderStatus(OrderStatus.CREATED)
       .build();
-    //BeanUtils.copyProperties(orderDtos, command);
 
-    return commandGateway.send(command);
+    if(command!=null){
+      return commandGateway.send(command);
+    }else{return new CompletableFuture<>();}
   }
 
   @PostMapping("/simpleorder/{userId}")
@@ -86,7 +78,7 @@ public class OrderCommandController {
       .orderId(orderId)
       .codeProduit(createOrderProdRequest.getProduitId())
       .quantite(1)
-      .userId(createOrderProdRequest.getUserId())
+      .customerId(createOrderProdRequest.getUserId())
       .orderStatus(OrderStatus.CREATED)
       .build();
 

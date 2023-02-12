@@ -8,5 +8,5 @@ import lombok.Data;
 public class CreateOrderProdRequest {
 
   private String produitId;
-  private Long userId;
+  private String userId;
 }

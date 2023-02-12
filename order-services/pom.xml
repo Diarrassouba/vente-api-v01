@@ -6,6 +6,7 @@
 	<modules>
 		<module>order-command-services</module>
 		<module>order-query-services</module>
+		<module>order-mongo-query-services</module>
 	</modules>
 	<parent>
 		<groupId>ci.kossovo</groupId>
