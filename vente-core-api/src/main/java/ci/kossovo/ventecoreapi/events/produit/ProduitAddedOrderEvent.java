@@ -1,6 +1,5 @@
 package ci.kossovo.ventecoreapi.events.produit;
 
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,8 +9,8 @@ public class ProduitAddedOrderEvent {
 
   private final String orderId;
   private final String codeProduit;
-  //private final OrderDtos orderDtos;
-  // private final OrderProduitDtos orderProduitDtos;
+  // pour mongo query seulement
+  private final String description;
   private final Integer quantite;
   private final Double prix;
 }

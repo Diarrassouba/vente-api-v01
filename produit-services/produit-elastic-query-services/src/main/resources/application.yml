@@ -1,0 +1,11 @@
+# spring:
+#   data:
+#     elasticsearch:
+#       cluster-name: docker-cluster
+#       # Comma-separated cluster node addresses. If not specified, starts a client node.
+#       cluster-nodes: localhost:9200
+#       # Enable Elasticsearch repositories.
+#       repositories:
+#         enabled: true
+#       rest:
+#         uris: http://localhost:9200

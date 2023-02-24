@@ -102,6 +102,7 @@ public class OrderAggregate {
       .builder()
       .orderId(cmd.getOrderId())
       .codeProduit(produit.getCodeProduit())
+      .description(produit.getTitre())
       .prix(produit.getPrix())
       .quantite(cmd.getQuantite())
       .build();
