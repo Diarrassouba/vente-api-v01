@@ -1,7 +1,6 @@
 package ci.kossovo.customerqueryservicce.data.documents;
 
 import java.io.Serializable;
-
 import javax.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,5 +22,4 @@ public class Adresse implements Serializable {
   private String quartier;
   private String ville;
   private String tel;
-  private String cel;
 }

@@ -25,7 +25,6 @@ public class CustomerEventHandler {
       .builder()
       .id(UUID.randomUUID().toString().split("-")[0])
       .tel(event.getTel())
-      .cel(event.getCel())
       .ville(event.getVille())
       .quartier(event.getQuartier())
       .build();

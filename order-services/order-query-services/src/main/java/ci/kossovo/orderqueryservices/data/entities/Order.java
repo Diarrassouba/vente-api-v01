@@ -32,7 +32,7 @@ public class Order {
   @MapKey(name = "orderLineId")
   private Map<String, OrderLineEntity> orderLines;
 
-  private String userId;
+  private OrderCustomer customer;
   private boolean orderConfirmed;
   private Double orderTotal;
 

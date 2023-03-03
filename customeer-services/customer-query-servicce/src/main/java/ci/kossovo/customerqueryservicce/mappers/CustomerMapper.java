@@ -15,7 +15,6 @@ import ci.kossovo.ventecoreapi.dtos.customer.CustomerDto;
 @Mapper(componentModel = "spring")
 public interface CustomerMapper {
   @Mapping(source = "customer.adresse.tel", target = "tel")
-  @Mapping(source = "customer.adresse.cel", target = "cel")
   @Mapping(source = "customer.adresse.ville", target = "ville")
   @Mapping(source = "customer.adresse.quartier", target = "quartier")
   @Mapping(source = "customer.id", target = "customerId")

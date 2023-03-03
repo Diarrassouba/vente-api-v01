@@ -33,7 +33,9 @@ public class OrderCommandController {
   // private QueryGateway queryGateway;
 
   @PostMapping
-  public CompletableFuture<String> createOrder( @RequestBody OrderRequest orderDtosRequest) {
+  public CompletableFuture<String> createOrder(
+    @RequestBody OrderRequest orderDtosRequest
+  ) {
     String orderId = UUID.randomUUID().toString();
 
     CreateOrderCommand command = CreateOrderCommand
@@ -45,9 +47,11 @@ public class OrderCommandController {
       .orderStatus(OrderStatus.CREATED)
       .build();
 
-    if(command!=null){
+    if (command != null) {
       return commandGateway.send(command);
-    }else{return new CompletableFuture<>();}
+    } else {
+      return new CompletableFuture<>();
+    }
   }
 
   @PostMapping("/simpleorder/{userId}")

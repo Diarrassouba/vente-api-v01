@@ -29,7 +29,6 @@ public class CustomerEventHandler {
       .nationalId(event.getNationalId())
       .email(event.getEmail())
       .tel(event.getTel())
-      .cel(event.getCel())
       .ville(event.getVille())
       .quartier(event.getQuartier())
       .build();

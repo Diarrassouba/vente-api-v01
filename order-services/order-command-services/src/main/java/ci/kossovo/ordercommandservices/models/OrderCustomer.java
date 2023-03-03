@@ -25,5 +25,5 @@ public class OrderCustomer implements Serializable {
   private String quartier;
   private String ville;
   private String tel;
-  private String cel;
+  
 }

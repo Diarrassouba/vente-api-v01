@@ -1,26 +1,34 @@
 package ci.kossovo.ordercommandservices.aggregates;
 
+import ci.kossovo.ordercommandservices.models.OrderCustomer;
 import ci.kossovo.ordercommandservices.models.Produit;
+import ci.kossovo.ordercommandservices.reposotories.CustomerRepository;
 import ci.kossovo.ordercommandservices.reposotories.ProduitRepository;
 import ci.kossovo.ventecoreapi.commands.order.AddProduitOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.CancelOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.CompleteOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.ConfirmOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.CreateOrderCommand;
+import ci.kossovo.ventecoreapi.commands.produit.UpdateStockProduitCommand;
+import ci.kossovo.ventecoreapi.dtos.customer.CustomerDto;
 import ci.kossovo.ventecoreapi.enums.OrderStatus;
 import ci.kossovo.ventecoreapi.events.order.OrderCanceledEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderCompletedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderConfirmedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderCreatedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderTotalAddedEvent;
-import ci.kossovo.ventecoreapi.events.produit.ProduitAddedOrderEvent;
+import ci.kossovo.ventecoreapi.events.produit.ProduitOrderAddedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitRemovedEvent;
+import ci.kossovo.ventecoreapi.events.produit.ProduitStockUpdatedEvent;
+import ci.kossovo.ventecoreapi.exceptions.customers.NotFoundOwnerException;
 import ci.kossovo.ventecoreapi.exceptions.order.DuplicateOrderLineException;
-import ci.kossovo.ventecoreapi.exceptions.order.NoTfindProduitException;
+import ci.kossovo.ventecoreapi.exceptions.order.NoTfoundProduitException;
 import ci.kossovo.ventecoreapi.exceptions.order.OrderAlreadyConfirmedException;
+import ci.kossovo.ventecoreapi.exceptions.produits.ProduitStockInsuffisantException;
 import java.util.HashMap;
 import java.util.Map;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -34,8 +42,7 @@ public class OrderAggregate {
   @AggregateIdentifier
   private String orderId;
 
-  //private String codeProduit;
-  private String customerId;
+  private CustomerDto customer;
   private OrderStatus orderStatus;
   private boolean orderConfirmed;
   private Double totalOrder;
@@ -46,11 +53,37 @@ public class OrderAggregate {
   public OrderAggregate() {}
 
   @CommandHandler
-  public OrderAggregate(CreateOrderCommand cmd) {
+  public OrderAggregate(
+    CreateOrderCommand cmd,
+    CustomerRepository customerRepository
+  ) {
     // On doit verifier la disponibilie du produit ou valider la commande
 
-    OrderCreatedEvent evt = new OrderCreatedEvent();
-    BeanUtils.copyProperties(cmd, evt);
+    OrderCustomer customer = customerRepository
+      .findById(cmd.getCustomerId())
+      .orElseThrow(() -> new NotFoundOwnerException(cmd.getCustomerId()));
+
+    CustomerDto customerDto = CustomerDto
+      .builder()
+      .customerId(customer.getId())
+      .email(customer.getEmail())
+      .nom(customer.getNom())
+      .prenom(customer.getPrenom())
+      .nationalId(customer.getNationalId())
+      .quartier(customer.getQuartier())
+      .ville(customer.getVille())
+      .tel(customer.getTel())
+      .build();
+
+    OrderCreatedEvent evt = OrderCreatedEvent
+      .builder()
+      .orderId(cmd.getOrderId())
+      .codeProduit(cmd.getCodeProduit())
+      .customer(customerDto)
+      .quantite(cmd.getQuantite())
+      .orderStatus(cmd.getOrderStatus())
+      .build();
+    // BeanUtils.copyProperties(cmd, evt);
 
     AggregateLifecycle.apply(evt);
   }
@@ -58,22 +91,11 @@ public class OrderAggregate {
   @EventSourcingHandler
   public void on(OrderCreatedEvent evt) {
     this.orderId = evt.getOrderId();
-    this.customerId = evt.getCodeProduit();
+    this.customer = evt.getCustomer();
     this.orderStatus = evt.getOrderStatus();
     this.orderConfirmed = false;
     this.totalOrder = 0.0;
     this.orderLines = new HashMap<>();
-    // if(evt.getProduit() != null) {
-
-    //   ProduitAddedOrderEvent produitAddedEvent = ProduitAddedOrderEvent
-    //   .builder()
-    //   .orderId(evt.getOrderId())
-    //   .codeProduit(evt.getCodeProduit())
-    //   .quantite(evt.getQuantite())
-    //   .build();
-    //   AggregateLifecycle.apply(produitAddedEvent);
-    // }
-
   }
 
   @CommandHandler
@@ -91,14 +113,11 @@ public class OrderAggregate {
     }
     Produit produit = produitRepository
       .findByCodeProduit(cmd.getCodeProduit())
-      .orElseThrow(() -> new NoTfindProduitException(cmd.getCodeProduit()));
+      .orElseThrow(() -> new NoTfoundProduitException(cmd.getCodeProduit()));
 
-    // OrderProduitDtos produitDtos=OrderProduitDtos.builder()
-    // .code(produit.getCodeProduit())
-    // .titre(produit.getTitre())
-    // .prix(produit.getPrix())
-    // .build();
-    ProduitAddedOrderEvent event = ProduitAddedOrderEvent
+   
+
+    ProduitOrderAddedEvent event = ProduitOrderAddedEvent
       .builder()
       .orderId(cmd.getOrderId())
       .codeProduit(produit.getCodeProduit())
@@ -111,7 +130,7 @@ public class OrderAggregate {
   }
 
   @EventSourcingHandler
-  public void on(ProduitAddedOrderEvent event) {
+  public void on(ProduitOrderAddedEvent event) {
     this.orderLines.put(
         event.getCodeProduit(),
         new OrderLine(
@@ -123,6 +142,16 @@ public class OrderAggregate {
     this.totalOrder += event.getPrix() * event.getQuantite();
   }
 
+  @CommandHandler
+  public void handle(UpdateStockProduitCommand cmd) {
+
+    ProduitStockUpdatedEvent event = ProduitStockUpdatedEvent.builder()
+    .codeProduit(cmd.getCodeProduit())
+    .nombre(cmd.getNombre())
+    .build();
+    AggregateLifecycle.apply(event);
+  }
+  
   @CommandHandler
   public void handle(CompleteOrderCommand cmd) {
     // Valider la commande

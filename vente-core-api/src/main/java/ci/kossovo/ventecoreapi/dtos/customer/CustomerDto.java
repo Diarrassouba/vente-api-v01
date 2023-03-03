@@ -17,7 +17,6 @@ public class CustomerDto {
   private String nationalId;
   private String email;
   private String tel;
-  private String cel;
   private String quartier;
   private String ville;
 }

@@ -24,5 +24,4 @@ public class OrderCustomer  {
   private String quartier;
   private String ville;
   private String tel;
-  private String cel;
 }

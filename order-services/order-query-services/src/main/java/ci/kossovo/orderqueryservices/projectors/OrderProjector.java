@@ -1,12 +1,14 @@
 package ci.kossovo.orderqueryservices.projectors;
 
 import ci.kossovo.orderqueryservices.data.entities.Order;
+import ci.kossovo.orderqueryservices.data.entities.OrderCustomer;
 import ci.kossovo.orderqueryservices.data.entities.OrderLineEntity;
 import ci.kossovo.orderqueryservices.data.entities.Produit;
 import ci.kossovo.orderqueryservices.data.mappers.OrderMapper;
 import ci.kossovo.orderqueryservices.data.repository.OrderLineRepository;
 import ci.kossovo.orderqueryservices.data.repository.OrderRepository;
 import ci.kossovo.orderqueryservices.data.repository.ProduitRepository;
+import ci.kossovo.orderqueryservices.data.repository.orderCustomerRepository;
 import ci.kossovo.ventecoreapi.dtos.order.OrderDtos;
 import ci.kossovo.ventecoreapi.dtos.produits.OrderProduitDtos;
 import ci.kossovo.ventecoreapi.events.order.OrderCanceledEvent;
@@ -14,11 +16,11 @@ import ci.kossovo.ventecoreapi.events.order.OrderCompletedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderConfirmedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderCreatedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderTotalAddedEvent;
-import ci.kossovo.ventecoreapi.events.produit.ProduitAddedOrderEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountDecrementedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountIncrementedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountUpdatedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCreatedEvent;
+import ci.kossovo.ventecoreapi.events.produit.ProduitOrderAddedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitRemovedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitStockAddedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitStockUpdatedEvent;
@@ -33,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.queryhandling.QueryHandler;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -45,13 +48,19 @@ public class OrderProjector {
   private final ProduitRepository produitRepository;
   private final OrderMapper orderMapper;
   private final OrderLineRepository orderLineRepository;
+  private final orderCustomerRepository orderCustomerRepository;
 
   @EventHandler
   public void on(OrderCreatedEvent event) {
+    OrderCustomer customer = new OrderCustomer();
+    BeanUtils.copyProperties(event.getCustomer(), customer);
+orderCustomerRepository.save(customer);
+    
+
     Order order = Order
       .builder()
       .orderId(event.getOrderId())
-      .userId(event.getCustomerId())
+      .customer(customer)
       .orderStatus(event.getOrderStatus())
       .orderConfirmed(false)
       .orderTotal(0.0)
@@ -63,20 +72,10 @@ public class OrderProjector {
     order = repository.save(order);
     log.info("OrderProjector.on(OrderCreatedEvent) : {}", order);
 
-    if (event.getCodeProduit() != null) {
-      ProduitAddedOrderEvent produitAddedEvent = ProduitAddedOrderEvent
-        .builder()
-        .orderId(event.getOrderId())
-        .codeProduit(event.getCodeProduit())
-        .quantite(event.getQuantite())
-        .build();
+   
 
-      eventGateway.publish(produitAddedEvent);
-      log.info(
-        "OrderProjector.on(OrderCreatedEvent) : {}",
-        "produitAddedEvent created"
-      );
-    }
+      
+   
   }
 
   @EventHandler
@@ -119,16 +118,18 @@ public class OrderProjector {
 
   //###################### Action sur OrderLine ##############################
   @EventHandler
-  public void on(ProduitAddedOrderEvent event) {
+  public void on(ProduitOrderAddedEvent event) {
     log.info(
       "OrderProjector.on(ProduitAddedOrderEvent) : {}",
       "produitAddedEvent received"
     );
     Order order = repository.findByOrderId(event.getOrderId()).orElse(null);
     log.info("OrderProjector.on(ProduitAddedOrderEvent) : {}", "order found");
+
     Produit produit = produitRepository
       .findByIdProduit(event.getCodeProduit())
       .orElse(null);
+
     log.info("OrderProjector.on(ProduitAddedOrderEvent) : {}", "produit found");
     if (order != null && produit != null) {
       OrderLineEntity orderLine = OrderLineEntity
@@ -148,14 +149,8 @@ public class OrderProjector {
       );
       order.setOrderTotal(order.getOrderTotal() + orderLine.getMontant());
       repository.save(order);
-      //Reduction de stock
-      eventGateway.publish(
-        ProduitStockUpdatedEvent
-          .builder()
-          .codeProduit(event.getCodeProduit())
-          .nombre(event.getQuantite())
-          .build()
-      );
+
+      
     }
   }
 

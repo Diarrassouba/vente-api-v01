@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ProduitAddedOrderEvent {
+public class ProduitOrderAddedEvent {
 
   private final String orderId;
   private final String codeProduit;
