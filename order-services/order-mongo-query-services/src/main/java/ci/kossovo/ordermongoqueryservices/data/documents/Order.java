@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.MapKey;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import lombok.AllArgsConstructor;
@@ -23,8 +24,8 @@ public class Order {
 
   @Id
   private String id;
-
-  private Map<String, Article> articles;
+  @MapKey(name = "orderLineId")
+  private Map<String, OrderLineEntity> orderLines;
 
   private OrderCustomer customer;
   private boolean orderConfirmed;
