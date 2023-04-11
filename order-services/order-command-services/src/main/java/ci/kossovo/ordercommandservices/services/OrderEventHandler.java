@@ -24,7 +24,7 @@ public class OrderEventHandler {
 
   @EventHandler
   public void on(OrderCreatedEvent event) {
-    if (event.getCodeProduit() != null) return;
+    if (event.getCodeProduit() != null) {
 
     Optional<Produit> produitOpt = produitRepository.findByCodeProduit(
       event.getCodeProduit()
@@ -35,13 +35,13 @@ public class OrderEventHandler {
       commandGateway.send(cmd);
       throw new NotFoundProduitException(event.getCodeProduit());
     }
+
+    
     if (produitOpt.get().getStock().intValue() < event.getQuantite()) {
       CancelOrderCommand cmd = new CancelOrderCommand(event.getOrderId());
       commandGateway.send(cmd);
 
-      throw new ProduitStockInsuffisantException(
-        produitOpt.get().getCodeProduit()
-      );
+      throw new ProduitStockInsuffisantException( produitOpt.get().getCodeProduit());
     }
     
     AddProduitOrderCommand command = AddProduitOrderCommand
@@ -52,7 +52,9 @@ public class OrderEventHandler {
       .build();
     if (command != null) commandGateway.send(command);
   }
+  }
 
+  // Lancer la commande de la reduction du stock du produit
   @EventHandler
   public void on(ProduitOrderAddedEvent event) {
     UpdateStockProduitCommand command = UpdateStockProduitCommand

@@ -43,8 +43,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OrderProjector {
 
-  private final OrderRepository repository;
-  private final EventGateway eventGateway;
+  private final OrderRepository orderRepository;
+  // private final EventGateway eventGateway;
   private final ProduitRepository produitRepository;
   private final OrderMapper orderMapper;
   private final OrderLineRepository orderLineRepository;
@@ -69,7 +69,7 @@ orderCustomerRepository.save(customer);
       .build();
     //BeanUtils.copyProperties(event, order);
 
-    order = repository.save(order);
+    order = orderRepository.save(order);
     log.info("OrderProjector.on(OrderCreatedEvent) : {}", order);
 
    
@@ -78,41 +78,43 @@ orderCustomerRepository.save(customer);
    
   }
 
+
+
   @EventHandler
   public void on(OrderCompletedEvent event) {
-    Order order = repository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
     if (order != null) {
       order.setOrderStatus(event.getOrderStatus());
-      repository.save(order);
+      orderRepository.save(order);
     }
   }
 
   @EventHandler
   public void on(OrderConfirmedEvent event) {
-    Order order = repository.findById(event.getOrderId()).orElse(null);
+    Order order = orderRepository.findById(event.getOrderId()).orElse(null);
     if (order != null) {
       order.setOrderConfirmed(true);
-      repository.save(order);
+      orderRepository.save(order);
     }
   }
 
   @EventHandler
   public void on(OrderCanceledEvent event) {
-    Order order = repository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
     if (order != null) {
       order.setOrderStatus(event.getOrderStatus());
-      repository.save(order);
+      orderRepository.save(order);
     }
   }
 
   @EventHandler
   public void on(OrderTotalAddedEvent event) {
-    Order order = repository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
     if (order != null) {
       order.setOrderTotal(
         order.getOrderTotal() - event.getOldSomme() + event.getNewSomme()
       );
-      repository.save(order);
+      orderRepository.save(order);
     }
   }
 
@@ -123,7 +125,7 @@ orderCustomerRepository.save(customer);
       "OrderProjector.on(ProduitAddedOrderEvent) : {}",
       "produitAddedEvent received"
     );
-    Order order = repository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
     log.info("OrderProjector.on(ProduitAddedOrderEvent) : {}", "order found");
 
     Produit produit = produitRepository
@@ -148,7 +150,7 @@ orderCustomerRepository.save(customer);
         "orderLine saved"
       );
       order.setOrderTotal(order.getOrderTotal() + orderLine.getMontant());
-      repository.save(order);
+      orderRepository.save(order);
 
       
     }
@@ -259,7 +261,7 @@ orderCustomerRepository.save(customer);
       "OrderProjector.on(ProduitRemovedOrderEvent) : {}",
       "produitRemovedEvent received"
     );
-    Order order = repository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
     log.info("OrderProjector.on(ProduitRemovedOrderEvent) : {}", "order found");
     Produit produit = produitRepository
       .findByIdProduit(event.getCodeProduit())
@@ -283,7 +285,7 @@ orderCustomerRepository.save(customer);
         "orderLine deleted"
       );
       order.setOrderTotal(order.getOrderTotal() - event.getTotal());
-      repository.save(order);
+      orderRepository.save(order);
 
       eventGateway.publish(
         ProduitStockAddedEvent
@@ -327,7 +329,7 @@ orderCustomerRepository.save(customer);
   //###################### Debut @QueryHandler ##################################
   @QueryHandler
   public OrderDtos getOrderSaga(GetOrderDetailsQuery query) {
-    Order order = repository.findByOrderId(query.orderId()).orElse(null);
+    Order order = orderRepository.findByOrderId(query.orderId()).orElse(null);
     if (order != null) {
       return orderMapper.dtoToOrder(order);
     } else {

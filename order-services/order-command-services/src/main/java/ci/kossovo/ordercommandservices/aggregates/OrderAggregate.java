@@ -24,11 +24,9 @@ import ci.kossovo.ventecoreapi.exceptions.customers.NotFoundOwnerException;
 import ci.kossovo.ventecoreapi.exceptions.order.DuplicateOrderLineException;
 import ci.kossovo.ventecoreapi.exceptions.order.NoTfoundProduitException;
 import ci.kossovo.ventecoreapi.exceptions.order.OrderAlreadyConfirmedException;
-import ci.kossovo.ventecoreapi.exceptions.produits.ProduitStockInsuffisantException;
 import java.util.HashMap;
 import java.util.Map;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -53,10 +51,7 @@ public class OrderAggregate {
   public OrderAggregate() {}
 
   @CommandHandler
-  public OrderAggregate(
-    CreateOrderCommand cmd,
-    CustomerRepository customerRepository
-  ) {
+  public OrderAggregate( CreateOrderCommand cmd,  CustomerRepository customerRepository ) {
     // On doit verifier la disponibilie du produit ou valider la commande
 
     OrderCustomer customer = customerRepository
@@ -81,7 +76,7 @@ public class OrderAggregate {
       .codeProduit(cmd.getCodeProduit())
       .customer(customerDto)
       .quantite(cmd.getQuantite())
-      .orderStatus(cmd.getOrderStatus())
+      .orderStatus(OrderStatus.CREATED)
       .build();
     // BeanUtils.copyProperties(cmd, evt);
 
@@ -99,10 +94,8 @@ public class OrderAggregate {
   }
 
   @CommandHandler
-  public void handle(
-    AddProduitOrderCommand cmd,
-    ProduitRepository produitRepository
-  ) {
+  public void handle( AddProduitOrderCommand cmd, ProduitRepository produitRepository) {
+
     if (orderConfirmed) {
       throw new OrderAlreadyConfirmedException(orderId);
     }
@@ -112,8 +105,8 @@ public class OrderAggregate {
       throw new DuplicateOrderLineException(codeProduit);
     }
     Produit produit = produitRepository
-      .findByCodeProduit(cmd.getCodeProduit())
-      .orElseThrow(() -> new NoTfoundProduitException(cmd.getCodeProduit()));
+    .findByCodeProduit(cmd.getCodeProduit())
+    .orElseThrow(() -> new NoTfoundProduitException(cmd.getCodeProduit()));
 
    
 

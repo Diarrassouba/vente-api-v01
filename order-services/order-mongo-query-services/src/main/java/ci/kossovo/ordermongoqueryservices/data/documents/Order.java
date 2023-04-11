@@ -25,7 +25,7 @@ public class Order {
   @Id
   private String id;
   @MapKey(name = "orderLineId")
-  private Map<String, OrderLineEntity> orderLines;
+  private Map<String, Article> articles;
 
   private OrderCustomer customer;
   private boolean orderConfirmed;

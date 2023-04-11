@@ -33,9 +33,7 @@ public class OrderCommandController {
   // private QueryGateway queryGateway;
 
   @PostMapping
-  public CompletableFuture<String> createOrder(
-    @RequestBody OrderRequest orderDtosRequest
-  ) {
+  public CompletableFuture<String> createOrder( @RequestBody OrderRequest orderDtosRequest ) {
     String orderId = UUID.randomUUID().toString();
 
     CreateOrderCommand command = CreateOrderCommand
@@ -44,32 +42,31 @@ public class OrderCommandController {
       .codeProduit(orderDtosRequest.getProduitId())
       .quantite(orderDtosRequest.getQuantite())
       .customerId(orderDtosRequest.getCustomerId())
-      .orderStatus(OrderStatus.CREATED)
       .build();
 
     if (command != null) {
       return commandGateway.send(command);
     } else {
       return new CompletableFuture<>();
-    }
+    } 
   }
 
-  @PostMapping("/simpleorder/{userId}")
-  public CompletableFuture<String> createSimpleOrder(
-    @PathVariable("userId") Long userId
-  ) {
-    String orderId = UUID.randomUUID().toString();
+  // @PostMapping("/simpleorder/{userId}")
+  // public CompletableFuture<String> createSimpleOrder(
+  //   @PathVariable("userId") String userId
+  // ) {
+  //   String orderId = UUID.randomUUID().toString();
 
-    CreateOrderSimpleCommand command = CreateOrderSimpleCommand
-      .builder()
-      .orderId(orderId)
-      .userId(userId)
-      .orderStatus(OrderStatus.CREATED)
-      .build();
-    //BeanUtils.copyProperties(orderDtos, command);
+  //   CreateOrderSimpleCommand command = CreateOrderSimpleCommand
+  //     .builder()
+  //     .orderId(orderId)
+  //     .customerId(userId)
+  //     .orderStatus(OrderStatus.CREATED)
+  //     .build();
+  //   //BeanUtils.copyProperties(orderDtos, command);
 
-    return commandGateway.send(command);
-  }
+  //   return commandGateway.send(command);
+  // }
 
   @PostMapping("/orderthroughproduit")
   public CompletableFuture<String> orderethroughproduit(
