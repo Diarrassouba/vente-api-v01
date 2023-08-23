@@ -6,7 +6,9 @@ import ci.kossovo.ventecoreapi.commands.order.CreateOrderCommand;
 import ci.kossovo.ventecoreapi.commands.order.CreateOrderSimpleCommand;
 import ci.kossovo.ventecoreapi.commands.order.DecrementProduitCountCommand;
 import ci.kossovo.ventecoreapi.commands.order.IncrementProduitCountCommand;
+import ci.kossovo.ventecoreapi.commands.order.RemoveOrderLineCommand;
 import ci.kossovo.ventecoreapi.dtos.order.CreateOrderProdRequest;
+import ci.kossovo.ventecoreapi.dtos.order.OrderLineRemoveRequest;
 import ci.kossovo.ventecoreapi.dtos.order.OrderProduitAddRequest;
 import ci.kossovo.ventecoreapi.dtos.order.OrderRequest;
 import ci.kossovo.ventecoreapi.dtos.order.RequestConfirmDtos;
@@ -33,7 +35,9 @@ public class OrderCommandController {
   // private QueryGateway queryGateway;
 
   @PostMapping
-  public CompletableFuture<String> createOrder( @RequestBody OrderRequest orderDtosRequest ) {
+  public CompletableFuture<String> createOrder(
+    @RequestBody OrderRequest orderDtosRequest
+  ) {
     String orderId = UUID.randomUUID().toString();
 
     CreateOrderCommand command = CreateOrderCommand
@@ -48,7 +52,50 @@ public class OrderCommandController {
       return commandGateway.send(command);
     } else {
       return new CompletableFuture<>();
-    } 
+    }
+  }
+
+  // ****************************************************************
+  // Suppression d'une ligne d'article  de la commande
+  // ****************************************************************
+  @PostMapping
+  public CompletableFuture<String> removeOrderLine(
+    @RequestBody OrderLineRemoveRequest orderLineRemoveRequest
+  ) {
+    RemoveOrderLineCommand commandOrderLineCommand = RemoveOrderLineCommand
+      .builder()
+      .orderId(orderLineRemoveRequest.getOrderId())
+      .codeProduit(orderLineRemoveRequest.getCodeProduit())
+      .build();
+
+    if (commandOrderLineCommand != null) {
+      return commandGateway.send(commandOrderLineCommand);
+    } else {
+      return new CompletableFuture<>();
+    }
+  }
+
+  // ****************************************************************
+  // Incrementer une ligne de commande
+  // ***************************************************************
+  @PostMapping("/produit/increment/{orderId}/{codeProduit}")
+  public CompletableFuture<Void> incrementOrderProduit(
+    @PathVariable("orderId") String orderId,
+    @PathVariable("produitId") String codeProduit
+  ) {
+    log.info("incrementOrderProduit receved orderId : {}", orderId);
+
+    IncrementProduitCountCommand command = IncrementProduitCountCommand
+      .builder()
+      .orderId(orderId)
+      .codeProduit(codeProduit)
+      .build();
+      
+    if (command != null) {
+      return commandGateway.send(command);
+    } else {
+      return new CompletableFuture<>();
+    }
   }
 
   // @PostMapping("/simpleorder/{userId}")
@@ -107,21 +154,6 @@ public class OrderCommandController {
       .orderId(orderProduitAddRequest.getOrderId())
       .codeProduit(orderProduitAddRequest.getCodeProduit())
       .quantite(orderProduitAddRequest.getQuantite())
-      .build();
-    return commandGateway.send(command);
-  }
-
-  @PostMapping("/produit/increment/{orderId}/{produitId}")
-  public CompletableFuture<Void> incrementOrderProduit(
-    @PathVariable("orderId") String orderId,
-    @PathVariable("produitId") String produitId
-  ) {
-    log.info("incrementOrderProduit receved orderId : {}", orderId);
-
-    IncrementProduitCountCommand command = IncrementProduitCountCommand
-      .builder()
-      .orderId(orderId)
-      .codeProduit(produitId)
       .build();
     return commandGateway.send(command);
   }

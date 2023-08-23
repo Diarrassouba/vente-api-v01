@@ -16,8 +16,9 @@ import ci.kossovo.ventecoreapi.events.order.OrderCompletedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderConfirmedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderCreatedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderTotalAddedEvent;
+import ci.kossovo.ventecoreapi.events.order.orderLine.OrderLineCountIncrementedEvent;
+import ci.kossovo.ventecoreapi.events.order.orderLine.OrderLineRemovedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountDecrementedEvent;
-import ci.kossovo.ventecoreapi.events.produit.ProduitCountIncrementedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountUpdatedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCreatedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitOrderAddedEvent;
@@ -54,8 +55,7 @@ public class OrderProjector {
   public void on(OrderCreatedEvent event) {
     OrderCustomer customer = new OrderCustomer();
     BeanUtils.copyProperties(event.getCustomer(), customer);
-orderCustomerRepository.save(customer);
-    
+    orderCustomerRepository.save(customer);
 
     Order order = Order
       .builder()
@@ -71,18 +71,13 @@ orderCustomerRepository.save(customer);
 
     order = orderRepository.save(order);
     log.info("OrderProjector.on(OrderCreatedEvent) : {}", order);
-
-   
-
-      
-   
   }
-
-
 
   @EventHandler
   public void on(OrderCompletedEvent event) {
-    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository
+      .findByOrderId(event.getOrderId())
+      .orElse(null);
     if (order != null) {
       order.setOrderStatus(event.getOrderStatus());
       orderRepository.save(order);
@@ -100,7 +95,9 @@ orderCustomerRepository.save(customer);
 
   @EventHandler
   public void on(OrderCanceledEvent event) {
-    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository
+      .findByOrderId(event.getOrderId())
+      .orElse(null);
     if (order != null) {
       order.setOrderStatus(event.getOrderStatus());
       orderRepository.save(order);
@@ -109,7 +106,9 @@ orderCustomerRepository.save(customer);
 
   @EventHandler
   public void on(OrderTotalAddedEvent event) {
-    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository
+      .findByOrderId(event.getOrderId())
+      .orElse(null);
     if (order != null) {
       order.setOrderTotal(
         order.getOrderTotal() - event.getOldSomme() + event.getNewSomme()
@@ -125,7 +124,9 @@ orderCustomerRepository.save(customer);
       "OrderProjector.on(ProduitAddedOrderEvent) : {}",
       "produitAddedEvent received"
     );
-    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
+    Order order = orderRepository
+      .findByOrderId(event.getOrderId())
+      .orElse(null);
     log.info("OrderProjector.on(ProduitAddedOrderEvent) : {}", "order found");
 
     Produit produit = produitRepository
@@ -151,25 +152,14 @@ orderCustomerRepository.save(customer);
       );
       order.setOrderTotal(order.getOrderTotal() + orderLine.getMontant());
       orderRepository.save(order);
-
-      
     }
   }
 
   @EventHandler
-  public void on(ProduitCountIncrementedEvent event) {
-    log.info(
-      "OrderProjector.on(ProduitCountIncrementedEvent) : {}",
-      "produitCountIncrementedEvent received"
-    );
-
+  public void on(OrderLineCountIncrementedEvent event) {
     OrderLineEntity orderLine = orderLineRepository.findByOrderOrderIdAndProduitIdProduit(
       event.getOrderId(),
       event.getCodeProduit()
-    );
-    log.info(
-      "OrderProjector.on(ProduitCountIncrementedEvent) : {}",
-      "orderLine found"
     );
 
     Integer newCount = orderLine.getCount() + 1;
@@ -256,44 +246,30 @@ orderCustomerRepository.save(customer);
   }
 
   @EventHandler
-  public void on(ProduitRemovedEvent event) {
-    log.info(
-      "OrderProjector.on(ProduitRemovedOrderEvent) : {}",
-      "produitRemovedEvent received"
-    );
-    Order order = orderRepository.findByOrderId(event.getOrderId()).orElse(null);
-    log.info("OrderProjector.on(ProduitRemovedOrderEvent) : {}", "order found");
+  public void on(OrderLineRemovedEvent event) {
+    Order order = orderRepository.findByOrderId(event.orderId()).orElse(null);
+
     Produit produit = produitRepository
-      .findByIdProduit(event.getCodeProduit())
+      .findByIdProduit(event.codeProduit())
       .orElse(null);
-    log.info(
-      "OrderProjector.on(ProduitRemovedOrderEvent) : {}",
-      "produit found"
-    );
+
     if (order != null && produit != null) {
       OrderLineEntity orderLine = orderLineRepository.findByOrderOrderIdAndProduitIdProduit(
-        event.getOrderId(),
-        event.getCodeProduit()
+        event.orderId(),
+        event.codeProduit()
       );
-      log.info(
-        "OrderProjector.on(ProduitRemovedOrderEvent) : {}",
-        "orderLine found"
-      );
-      orderLineRepository.delete(orderLine);
-      log.info(
-        "OrderProjector.on(ProduitRemovedOrderEvent) : {}",
-        "orderLine deleted"
-      );
-      order.setOrderTotal(order.getOrderTotal() - event.getTotal());
-      orderRepository.save(order);
 
-      eventGateway.publish(
-        ProduitStockAddedEvent
-          .builder()
-          .codeProduit(event.getCodeProduit())
-          .nombre(orderLine.getCount())
-          .build()
-      );
+      orderLineRepository.delete(orderLine);
+
+      order.setOrderTotal(order.getOrderTotal() - event.total());
+      orderRepository.save(order);
+      // eventGateway.publish(
+      //   ProduitStockAddedEvent
+      //     .builder()
+      //     .codeProduit(event.getCodeProduit())
+      //     .nombre(orderLine.getCount())
+      //     .build()
+      // );
     }
   }
 

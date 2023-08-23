@@ -15,10 +15,11 @@ import lombok.NoArgsConstructor;
 public class Article {
 
   // @Id
-  private String orderLineId;
-  private Produit produit;
-  private Integer count;
+  private String articleId;
+  private String titre;
   private Double prix;
+  private String description;
+  private Integer count;
   private Double montant;
   // private Order order;
 }

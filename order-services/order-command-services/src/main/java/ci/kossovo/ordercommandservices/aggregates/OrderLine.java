@@ -1,21 +1,22 @@
 package ci.kossovo.ordercommandservices.aggregates;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.modelling.command.AggregateLifecycle;
-import org.axonframework.modelling.command.EntityId;
-
 import ci.kossovo.ventecoreapi.commands.order.DecrementProduitCountCommand;
 import ci.kossovo.ventecoreapi.commands.order.IncrementProduitCountCommand;
+import ci.kossovo.ventecoreapi.commands.order.RemoveOrderLineCommand;
 import ci.kossovo.ventecoreapi.commands.order.UpdateProduitCountCommand;
 import ci.kossovo.ventecoreapi.events.order.OrderConfirmedEvent;
+import ci.kossovo.ventecoreapi.events.order.orderLine.OrderLineCountIncrementedEvent;
+import ci.kossovo.ventecoreapi.events.order.orderLine.OrderLineRemovedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountDecrementedEvent;
-import ci.kossovo.ventecoreapi.events.produit.ProduitCountIncrementedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitCountUpdatedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitRemovedEvent;
 import ci.kossovo.ventecoreapi.exceptions.order.OrderAlreadyConfirmedException;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateLifecycle;
+import org.axonframework.modelling.command.EntityId;
 
 @EqualsAndHashCode
 @Slf4j
@@ -31,13 +32,9 @@ public class OrderLine {
   private Double total;
   private boolean orderConfirmed;
 
-  // public OrderLine(String codeProduit, Double prix) {
-  //   this.codeProduit = codeProduit;
-  //   this.count = 1;
-  //   this.prix = prix;
-  //   this.total = prix * count;
-  // }
-
+  // ************************************************
+  // Constructor par arguments
+  // ************************************************
   public OrderLine(String codeProduit, Double prix, Integer count) {
     this.codeProduit = codeProduit;
     this.count = count;
@@ -46,36 +43,37 @@ public class OrderLine {
   }
 
   @CommandHandler
-  public void handle(IncrementProduitCountCommand cmd) {
-    log.info(
-      "################ handle IncrementProduitCountCommand ################"
+  public void handle(RemoveOrderLineCommand cmd) {
+    // OrderLine orderLine = orderLines.get(cmd.getCodeProduit());
+    OrderLineRemovedEvent event = new OrderLineRemovedEvent(
+      cmd.getOrderId(),
+      cmd.getCodeProduit(),
+      total,
+      count
     );
 
+    AggregateLifecycle.apply(event);
+  }
+
+  @CommandHandler
+  public void handle(IncrementProduitCountCommand cmd) {
     if (orderConfirmed) {
       throw new OrderAlreadyConfirmedException(cmd.getOrderId());
     } else {
       AggregateLifecycle.apply(
-        ProduitCountIncrementedEvent
+        OrderLineCountIncrementedEvent
           .builder()
           .orderId(cmd.getOrderId())
           .codeProduit(codeProduit)
           .build()
       );
-      log.info("################increment even evoye ################");
     }
   }
 
   @EventSourcingHandler
-  public void on(ProduitCountIncrementedEvent event) {
+  public void on(OrderLineCountIncrementedEvent event) {
     this.count++;
     this.total = prix * count;
-    // OrderTotalAddedEvent evt = OrderTotalAddedEvent
-    //   .builder()
-    //   .orderId(event.getOrderId())
-    //   .oldSomme(prix * (count - 1))
-    //   .newSomme(prix * count)
-    //   .build();
-    // AggregateLifecycle.apply(evt);
   }
 
   @CommandHandler

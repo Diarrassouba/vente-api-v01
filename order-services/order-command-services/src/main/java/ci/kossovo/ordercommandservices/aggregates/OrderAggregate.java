@@ -17,8 +17,8 @@ import ci.kossovo.ventecoreapi.events.order.OrderCompletedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderConfirmedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderCreatedEvent;
 import ci.kossovo.ventecoreapi.events.order.OrderTotalAddedEvent;
+import ci.kossovo.ventecoreapi.events.order.orderLine.OrderLineRemovedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitOrderAddedEvent;
-import ci.kossovo.ventecoreapi.events.produit.ProduitRemovedEvent;
 import ci.kossovo.ventecoreapi.events.produit.ProduitStockUpdatedEvent;
 import ci.kossovo.ventecoreapi.exceptions.customers.NotFoundOwnerException;
 import ci.kossovo.ventecoreapi.exceptions.order.DuplicateOrderLineException;
@@ -49,25 +49,26 @@ public class OrderAggregate {
   private Map<String, OrderLine> orderLines;
 
   public OrderAggregate() {}
+  
 
   @CommandHandler
-  public OrderAggregate( CreateOrderCommand cmd,  CustomerRepository customerRepository ) {
+  public OrderAggregate( CreateOrderCommand cmd, CustomerRepository customerRepository ) {
     // On doit verifier la disponibilie du produit ou valider la commande
 
-    OrderCustomer customer = customerRepository
+    OrderCustomer custom = customerRepository
       .findById(cmd.getCustomerId())
       .orElseThrow(() -> new NotFoundOwnerException(cmd.getCustomerId()));
 
     CustomerDto customerDto = CustomerDto
       .builder()
-      .customerId(customer.getId())
-      .email(customer.getEmail())
-      .nom(customer.getNom())
-      .prenom(customer.getPrenom())
-      .nationalId(customer.getNationalId())
-      .quartier(customer.getQuartier())
-      .ville(customer.getVille())
-      .tel(customer.getTel())
+      .customerId(custom.getId())
+      .email(custom.getEmail())
+      .nom(custom.getNom())
+      .prenom(custom.getPrenom())
+      .nationalId(custom.getNationalId())
+      .quartier(custom.getQuartier())
+      .ville(custom.getVille())
+      .tel(custom.getTel())
       .build();
 
     OrderCreatedEvent evt = OrderCreatedEvent
@@ -93,9 +94,9 @@ public class OrderAggregate {
     this.orderLines = new HashMap<>();
   }
 
-  @CommandHandler
-  public void handle( AddProduitOrderCommand cmd, ProduitRepository produitRepository) {
 
+  @CommandHandler
+  public void handle(  AddProduitOrderCommand cmd,ProduitRepository produitRepository ) {
     if (orderConfirmed) {
       throw new OrderAlreadyConfirmedException(orderId);
     }
@@ -105,10 +106,8 @@ public class OrderAggregate {
       throw new DuplicateOrderLineException(codeProduit);
     }
     Produit produit = produitRepository
-    .findByCodeProduit(cmd.getCodeProduit())
-    .orElseThrow(() -> new NoTfoundProduitException(cmd.getCodeProduit()));
-
-   
+      .findByCodeProduit(cmd.getCodeProduit())
+      .orElseThrow(() -> new NoTfoundProduitException(cmd.getCodeProduit()));
 
     ProduitOrderAddedEvent event = ProduitOrderAddedEvent
       .builder()
@@ -137,14 +136,14 @@ public class OrderAggregate {
 
   @CommandHandler
   public void handle(UpdateStockProduitCommand cmd) {
-
-    ProduitStockUpdatedEvent event = ProduitStockUpdatedEvent.builder()
-    .codeProduit(cmd.getCodeProduit())
-    .nombre(cmd.getNombre())
-    .build();
+    ProduitStockUpdatedEvent event = ProduitStockUpdatedEvent
+      .builder()
+      .codeProduit(cmd.getCodeProduit())
+      .nombre(cmd.getNombre())
+      .build();
     AggregateLifecycle.apply(event);
   }
-  
+
   @CommandHandler
   public void handle(CompleteOrderCommand cmd) {
     // Valider la commande
@@ -195,10 +194,14 @@ public class OrderAggregate {
     this.orderConfirmed = true;
   }
 
+  // ****************************************************************
+// Suppression d'une ligne de commande
+// ****************************************************************
+
   @EventSourcingHandler
-  public void on(ProduitRemovedEvent event) {
-    this.orderLines.remove(event.getCodeProduit());
-    this.totalOrder -= event.getTotal();
+  public void on(OrderLineRemovedEvent event) {
+    this.orderLines.remove(event.codeProduit());
+    this.totalOrder -= event.total();
   }
 
   @EventSourcingHandler
